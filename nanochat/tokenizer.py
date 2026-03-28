@@ -149,7 +149,6 @@ class HuggingFaceTokenizer:
 # -----------------------------------------------------------------------------
 # Tokenizer based on rustbpe + tiktoken combo
 import pickle
-import rustbpe
 import tiktoken
 
 class RustBPETokenizer:
@@ -162,6 +161,10 @@ class RustBPETokenizer:
     @classmethod
     def train_from_iterator(cls, text_iterator, vocab_size):
         # 1) train using rustbpe
+        # Import rustbpe lazily so that importing this module doesn't require
+        # the Rust extension to be built (helps on Windows/dev machines).
+        import rustbpe
+
         tokenizer = rustbpe.Tokenizer()
         # the special tokens are inserted later in __init__, we don't train them here
         vocab_size_no_special = vocab_size - len(SPECIAL_TOKENS)
@@ -379,10 +382,14 @@ class RustBPETokenizer:
 # -----------------------------------------------------------------------------
 # nanochat-specific convenience functions
 
-def get_tokenizer():
+def get_tokenizer(tokenizer_type="rustbpe"):
     from nanochat.common import get_base_dir
     base_dir = get_base_dir()
     tokenizer_dir = os.path.join(base_dir, "tokenizer")
+    if tokenizer_type == "victorian":
+        from nanochat.victorian_tokenizer import VictorianTokenizer
+        tokenizer_json = os.path.join(tokenizer_dir, "tokenizer.json")
+        return VictorianTokenizer(tokenizer_json)
     # return HuggingFaceTokenizer.from_directory(tokenizer_dir)
     return RustBPETokenizer.from_directory(tokenizer_dir)
 

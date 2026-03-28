@@ -71,6 +71,7 @@ parser.add_argument('-s', '--step', type=int, default=None, help='Step to load')
 parser.add_argument('-p', '--port', type=int, default=8000, help='Port to run the server on')
 parser.add_argument('-d', '--dtype', type=str, default='bfloat16', choices=['float32', 'bfloat16'])
 parser.add_argument('--device-type', type=str, default='', choices=['cuda', 'cpu', 'mps'], help='Device type for evaluation: cuda|cpu|mps. empty => autodetect')
+parser.add_argument('--tokenizer-type', type=str, default='rustbpe', choices=['rustbpe', 'victorian'], help='Tokenizer type: rustbpe (default nanochat) or victorian (mr_chatterbox)')
 parser.add_argument('--host', type=str, default='0.0.0.0', help='Host to bind the server to')
 args = parser.parse_args()
 
@@ -123,7 +124,7 @@ class WorkerPool:
                 device = torch.device(device_type) # e.g. cpu|mps
                 print(f"Loading model on {device_type}...")
 
-            model, tokenizer, _ = load_model(source, device, phase="eval", model_tag=model_tag, step=step)
+            model, tokenizer, _ = load_model(source, device, phase="eval", model_tag=model_tag, step=step, tokenizer_type=args.tokenizer_type)
             engine = Engine(model, tokenizer)
             autocast_ctx = torch.amp.autocast(device_type=device_type, dtype=ptdtype) if device_type == "cuda" else nullcontext()
 
